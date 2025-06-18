@@ -1,11 +1,8 @@
 from sqlalchemy.orm import sessionmaker
 from models import db
 from fastapi import Depends, HTTPException, Request
-from sqlalchemy.orm import Session
-from config import SECRET_KEY, ALGORITHM
 from models import User
 from logger import logger
-from main import oauth2_schema
 
 SessionLocal = sessionmaker(bind=db.engine)
 
@@ -49,20 +46,3 @@ def require_admin_or_owner(
         status_code=403,
         detail="Acesso negado: você só pode acessar seus próprios recursos"
     )
-
-def verify_token(token: str = Depends(oauth2_schema), session: Session = Depends(get_session)):
-    from jose import jwt, JWTError
-    try:
-        payload = jwt.decode(token, key=SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: int = int(payload.get("sub"))
-
-        if user_id is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        user = session.query(User).filter(User.id == user_id).first()
-        if not user:
-            raise HTTPException(status_code=401, detail="User not found")
-        
-        return user
-
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")

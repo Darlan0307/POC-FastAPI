@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import OAuth2PasswordRequestForm
 from models import User
-from dependencies import get_session, verify_token
+from dependencies import get_session, get_current_user
 from main import bcrypt_context
 from config import ALGORITHM, SECRET_KEY, ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS
 from schemas import UserSchema, LoginSchema
@@ -33,11 +32,6 @@ def auth_user(email:str, password:str, session: Session):
     
     return user
 
-
-@auth_router.get("/")
-async def get_auth():
-    return {"message": "Authentication endpoint"}
-
 @auth_router.post("/register")
 async def register(user_schema: UserSchema, session:Session = Depends(get_session)):
     user = session.query(User).filter(User.email == user_schema.email).first()
@@ -65,24 +59,11 @@ async def login(login_schema: LoginSchema, session: Session = Depends(get_sessio
         "token_type": "bearer",
     }
 
-@auth_router.post("/login-form")
-async def login_form(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
-    user = auth_user(form_data.username, form_data.password, session)
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-
-    access_token = create_token(user.id)
-    
-    return { 
-        "access_token": access_token,
-        "token_type": "bearer",
-    }
-
 @auth_router.get("/refresh")
-async def refresh_token(user: User = Depends(verify_token)):
+async def refresh_token(current_user: User = Depends(get_current_user)):
     try:
-        new_access_token = create_token(user.id)
-        new_refresh_token = create_token(user.id, timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS))
+        new_access_token = create_token(current_user.id)
+        new_refresh_token = create_token(current_user.id, timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS))
         return {"access_token": new_access_token,
                 "refresh_token": new_refresh_token,
                 "token_type": "bearer"}

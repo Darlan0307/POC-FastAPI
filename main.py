@@ -3,13 +3,10 @@ from passlib.context import CryptContext
 from dotenv import load_dotenv
 from middleware import AuthMiddleware
 from fastapi.openapi.utils import get_openapi
-from fastapi.security import OAuth2PasswordBearer
 
 load_dotenv()
 
 app = FastAPI()
-
-oauth2_schema = OAuth2PasswordBearer(tokenUrl="/auth/login-form")
 
 def custom_openapi():
     if app.openapi_schema:
@@ -21,15 +18,6 @@ def custom_openapi():
         routes=app.routes,
     )
     openapi_schema["components"]["securitySchemes"] = {
-        "OAuth2PasswordBearer": {
-            "type": "oauth2",
-            "flows": {
-                "password": {
-                    "tokenUrl": "/auth/login-form",
-                    "scopes": {}
-                }
-            }
-        },
         "BearerAuth": {
             "type": "http",
             "scheme": "bearer",

@@ -26,9 +26,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
     def is_public_path(self, path: str) -> bool:
         if path in self.public_paths:
             return True
-        
-        if path.startswith("/auth/"):
-            return True
             
         return False
     
