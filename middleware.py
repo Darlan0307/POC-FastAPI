@@ -34,12 +34,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
     
     def extract_token(self, request: Request) -> str:
 
-        print(f"Headers recebidos: {dict(request.headers)}")
         authorization = request.headers.get("Authorization")
         if authorization and authorization.startswith("Bearer "):
             return authorization.split(" ")[1]
         
-        token_cookie = request.cookies.get("csrftoken")
+        token_cookie = request.cookies.get("access_token")
         if token_cookie:
             return token_cookie
             
@@ -50,7 +49,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         
         if self.is_public_path(path):
             return await call_next(request)
-        print("CHAMOU extract_token")
+        
         token = self.extract_token(request)
         
         if not token:
